@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Federal Investigation Bureau - Рапорт на увольнение</title>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <style>
         /* Ваши существующие стили остаются без изменений */
         * {
@@ -262,21 +263,21 @@
             display: block;
         }
 
-        .captcha-container {
+        /* Стили для Cloudflare Turnstile */
+        .cf-turnstile-container {
             background: rgba(255, 255, 255, 0.05);
             border-radius: 8px;
             padding: 15px;
             margin: 20px 0;
             text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 80px;
         }
 
-        .captcha-text {
-            font-size: 24px;
-            font-weight: bold;
-            letter-spacing: 3px;
-            margin: 10px 0;
-            color: #3498db;
-            user-select: none;
+        .cf-turnstile-container iframe {
+            border-radius: 4px;
         }
 
         .hidden-field {
@@ -528,25 +529,18 @@
                     </div>
                 </div>
 
-                <div class="captcha-container" id="captcha-container">
-                    <p>Подтвердите, что вы не робот:</p>
-                    <div class="captcha-text" id="captcha-text"></div>
-                    <input type="text" id="captcha-input" placeholder="Введите текст выше" required 
-                           autocomplete="off" data-lpignore="true">
-                    <div class="validation-message validation-error" id="captcha-validation">
-                        Введите текст с изображения
-                    </div>
-                    <button type="button" id="refresh-captcha" style="margin-top: 10px; background: #3498db; border: none; padding: 5px 10px; border-radius: 4px; color: white; cursor: pointer;">
-                        Обновить
-                    </button>
+                <!-- Cloudflare Turnstile вместо кастомной капчи -->
+                <div class="cf-turnstile-container" id="turnstile-container">
+                    <div class="cf-turnstile" data-sitekey="1x00000000000000000000AA" data-theme="dark" data-callback="onTurnstileSuccess"></div>
                 </div>
+                <input type="hidden" id="cf-turnstile-response" name="cf-turnstile-response">
 
                 <div class="loading" id="loading">
                     <div class="spinner"></div>
                     <p>Проверка данных и отправка...</p>
                 </div>
 
-                <button type="submit" class="submit-btn" id="submit-btn">
+                <button type="submit" class="submit-btn" id="submit-btn" disabled>
                     🔒 Отправить рапорт на увольнение
                 </button>
             </form>
@@ -615,7 +609,46 @@
                 
                 // Транслитерация
                 'pidor', 'pidoras', 'pidarasy', 'gandon', 'govno',
-                'mudak', 'bljad', 'suka', 'huilo', 'ebalo'
+                'mudak', 'bljad', 'suka', 'huilo', 'ebalo',
+                
+                // Новые добавленные слова "mat" и "ebal" во всех формах
+                'мат', 'мать', 'матери', 'матерный', 'матерщина', 'матершинник',
+                'матерю', 'материть', 'матерился', 'материшь', 'материт',
+                'матерный', 'матерно', 'матерщина', 'матершинник',
+                'матерный', 'матерно', 'матерщина', 'матершинник',
+                
+                // Вариации слова "мат" с заменой букв
+                'mат', 'maт', 'mat', 'м@т', 'м4т', 'm@t', 'm4t',
+                'мaть', 'mать', 'maть', 'm@ть', 'm4ть',
+                'мaтери', 'mатери', 'maтери', 'm@тери', 'm4тери',
+                
+                // Слово "ebal" и его производные
+                'ебал', 'ебать', 'ёбал', 'ёбать', 'ебли', 'ебло', 'ебля',
+                'ебан', 'ебаный', 'ёбаный', 'ебанный', 'ёбанный',
+                'ебашил', 'ебашить', 'ёбашил', 'ёбашить',
+                'ебнул', 'ебнуть', 'ёбнул', 'ёбнуть',
+                'ебе', 'еби', 'ебит', 'ебите', 'ебится',
+                'ебу', 'ебы', 'ебыл', 'ебыть',
+                
+                // Вариации слова "ebal" с заменой букв
+                'эбал', 'эбать', 'эбли', 'эбло', 'эбля',
+                '3бал', '3бать', '3бли', '3бло', '3бля',
+                'eбал', 'eбать', 'eбли', 'eбло', 'eбля',
+                'ёб@л', 'еб@ть', 'ёб@ть', 'еб@л',
+                'eб@л', 'eб@ть', 'ёб@л', 'ёб@ть',
+                '3б@л', '3б@ть', '3б@ли', '3б@ло', '3б@ля',
+                
+                // Комбинированные формы
+                'мать твою', 'мать твоя', 'мать твое', 'мать твой',
+                'мать его', 'мать её', 'мать их',
+                'ёб твою', 'еб твою', 'ёб твоя', 'еб твоя',
+                'ёб твое', 'еб твое', 'ёб твой', 'еб твой',
+                
+                // Сокращения и сленг
+                'мт', 'мть', 'мтр', 'мтрь',
+                'еб', 'ёб', 'эб', '3б',
+                'ебучий', 'ёбучий', 'ебучая', 'ёбучая', 'ебучее', 'ёбучее',
+                'ебанько', 'ёбанько', 'ебашка', 'ёбашка'
             ],
             
             // Вариации букв для обхода фильтра
@@ -638,7 +671,7 @@
                 'п': ['p'],
                 'р': ['r', 'p'],
                 'с': ['s', 'c'],
-                'т': ['t'],
+                'т': ['t', '7'],
                 'у': ['u', 'y'],
                 'ф': ['f'],
                 'х': ['h', 'x'],
@@ -649,7 +682,7 @@
                 'ъ': [''],
                 'ы': ['y', 'i'],
                 'ь': [''],
-                'э': ['e'],
+                'э': ['e', '3'],
                 'ю': ['yu', 'ju'],
                 'я': ['ya', 'ja']
             },
@@ -686,6 +719,13 @@
                     variants.add(newWord.join(''));
                 }
                 
+                // Добавляем варианты с добавлением лишних букв
+                for (let i = 0; i < letters.length; i++) {
+                    const newWord = [...letters];
+                    newWord.splice(i, 0, 'x');
+                    variants.add(newWord.join(''));
+                }
+                
                 return Array.from(variants);
             },
             
@@ -700,13 +740,51 @@
                         const pattern = variant
                             .replace(/([.*+?^${}()|[\]\\])/g, '\\$1')
                             .replace(/a/gi, '[a@4]')
-                            .replace(/e/gi, '[e3]')
+                            .replace(/e/gi, '[e3ё]')
                             .replace(/i/gi, '[i1l]')
                             .replace(/o/gi, '[o0]')
                             .replace(/s/gi, '[s5]')
-                            .replace(/t/gi, '[t7]');
+                            .replace(/t/gi, '[t7]')
+                            .replace(/у/gi, '[уy]')
+                            .replace(/е/gi, '[еeё3]')
+                            .replace(/а/gi, '[аa@4]')
+                            .replace(/о/gi, '[оo0]')
+                            .replace(/с/gi, '[сcs]')
+                            .replace(/р/gi, '[рpr]')
+                            .replace(/х/gi, '[хxh]')
+                            .replace(/к/gi, '[кk]')
+                            .replace(/м/gi, '[мm]')
+                            .replace(/н/gi, '[нn]')
+                            .replace(/т/gi, '[тt7]')
+                            .replace(/б/gi, '[бb6]')
+                            .replace(/в/gi, '[вvb]')
+                            .replace(/г/gi, '[гg]')
+                            .replace(/д/gi, '[дd]')
+                            .replace(/ж/gi, '[жj]')
+                            .replace(/з/gi, '[зz3]')
+                            .replace(/и/gi, '[иiu]')
+                            .replace(/й/gi, '[йyj]')
+                            .replace(/л/gi, '[лl]')
+                            .replace(/п/gi, '[пp]')
+                            .replace(/ф/gi, '[фf]')
+                            .replace(/ц/gi, '[цc]')
+                            .replace(/ч/gi, '[чch]')
+                            .replace(/ш/gi, '[шsh]')
+                            .replace(/щ/gi, '[щsch]')
+                            .replace(/ъ/gi, '[ъ]')
+                            .replace(/ы/gi, '[ыyi]')
+                            .replace(/ь/gi, '[ь]')
+                            .replace(/э/gi, '[эe3]')
+                            .replace(/ю/gi, '[юyu]')
+                            .replace(/я/gi, '[яya]');
                         
                         patterns.push(new RegExp(`\\b${pattern}\\b`, 'gi'));
+                        
+                        // Добавляем паттерны для слов с разделителями
+                        const patternWithSeparators = variant
+                            .split('')
+                            .join('[\\s\\-_\\.]*');
+                        patterns.push(new RegExp(patternWithSeparators, 'gi'));
                     }
                 }
                 
@@ -719,12 +797,13 @@
                 
                 const patterns = this.createPatterns();
                 const cleanText = text.toLowerCase()
-                    .replace(/[^\w\sа-яё]/gi, ' ') // Заменяем спец символы на пробелы
+                    .replace(/[^\w\sа-яё\-]/gi, ' ') // Заменяем спец символы на пробелы
                     .replace(/\s+/g, ' ') // Убираем множественные пробелы
                     .trim();
                 
                 for (const pattern of patterns) {
                     if (pattern.test(cleanText)) {
+                        console.log('Найдено запрещенное слово по паттерну:', pattern);
                         return true;
                     }
                 }
@@ -734,8 +813,19 @@
                 for (const word of words) {
                     for (const bannedWord of this.bannedWords) {
                         if (word.includes(bannedWord) && word.length >= bannedWord.length - 1) {
+                            console.log('Найдено запрещенное слово в комбинации:', bannedWord, 'в слове:', word);
                             return true;
                         }
+                    }
+                }
+                
+                // Проверка на разделенные слова (м а т ь)
+                const spacedText = text.toLowerCase().replace(/\s+/g, '');
+                for (const bannedWord of this.bannedWords) {
+                    const bannedWithoutSpaces = bannedWord.replace(/\s+/g, '');
+                    if (spacedText.includes(bannedWithoutSpaces)) {
+                        console.log('Найдено запрещенное слово без пробелов:', bannedWord);
+                        return true;
                     }
                 }
                 
@@ -1058,6 +1148,34 @@
             }
         }
 
+        // ==================== CLOUDFLARE TURNSTILE ФУНКЦИОНАЛЬНОСТЬ ====================
+
+        // Переменная для отслеживания состояния Turnstile
+        let turnstileVerified = false;
+
+        // Callback функция для успешного прохождения Turnstile
+        function onTurnstileSuccess(token) {
+            document.getElementById('cf-turnstile-response').value = token;
+            turnstileVerified = true;
+            document.getElementById('submit-btn').disabled = false;
+            console.log('Turnstile успешно пройден');
+        }
+
+        // Функция для сброса Turnstile
+        function resetTurnstile() {
+            turnstileVerified = false;
+            document.getElementById('cf-turnstile-response').value = '';
+            document.getElementById('submit-btn').disabled = true;
+            
+            // Перезагружаем Turnstile виджет
+            if (window.turnstile) {
+                const container = document.querySelector('.cf-turnstile');
+                if (container) {
+                    window.turnstile.reset();
+                }
+            }
+        }
+
         // ==================== СУЩЕСТВУЮЩИЙ ОСНОВНОЙ КОД ====================
 
         // Защита консоли
@@ -1244,25 +1362,6 @@
             }
         }
 
-        function generateCaptcha() {
-            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
-            return Array.from({length: 6}, () => chars.charAt(Math.floor(Math.random() * chars.length))).join('');
-        }
-
-        let currentCaptcha = '';
-
-        function displayCaptcha() {
-            currentCaptcha = generateCaptcha();
-            document.getElementById('captcha-text').textContent = currentCaptcha;
-            document.getElementById('captcha-input').value = '';
-            toggleValidationMessage('captcha-validation', true);
-        }
-
-        function validateCaptcha() {
-            const input = document.getElementById('captcha-input').value;
-            return input === currentCaptcha;
-        }
-
         function updateTime() {
             const now = new Date();
             document.getElementById('current-time').textContent = `Сегодня, в ${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
@@ -1438,7 +1537,6 @@
             const inventoryInput = document.getElementById('inventory-screenshot');
             const reasonSelect = document.getElementById('reason-type');
             const customReasonTextarea = document.getElementById('custom-reason');
-            const captchaInput = document.getElementById('captcha-input');
 
             // Реальная проверка на плохие слова при вводе
             nameInput.addEventListener('input', function() {
@@ -1502,11 +1600,6 @@
                 const isValid = this.value !== '';
                 toggleValidationMessage('reason-validation', isValid);
             });
-
-            captchaInput.addEventListener('input', function() {
-                const isValid = this.value.length > 0;
-                toggleValidationMessage('captcha-validation', isValid);
-            });
         }
 
         function toggleValidationMessage(elementId, isValid) {
@@ -1533,8 +1626,6 @@
         document.getElementById('custom-reason').addEventListener('input', function() {
             document.getElementById('custom-reason-counter').textContent = this.value.length;
         });
-
-        document.getElementById('refresh-captcha').addEventListener('click', displayCaptcha);
 
         document.getElementById('check-discord-btn').addEventListener('click', async function() {
             const discordId = document.getElementById('discord-id').value.trim();
@@ -1587,7 +1678,6 @@
             initializeEnhancedSecurity();
             updateTime();
             setInterval(updateTime, 60000);
-            displayCaptcha();
             trackUserActivity();
             setupRealTimeValidation();
             
@@ -1656,10 +1746,10 @@
             }
             lastSubmitTime = now;
             
-            if (!validateCaptcha()) {
-                errorMessage.innerHTML = '<p>Неверно введена CAPTCHA. Попробуйте снова.</p>';
+            // Проверка Cloudflare Turnstile
+            if (!turnstileVerified) {
+                errorMessage.innerHTML = '<p>Пожалуйста, пройдите проверку безопасности.</p>';
                 errorMessage.style.display = 'block';
-                displayCaptcha();
                 return;
             }
             
@@ -1777,7 +1867,6 @@
                     document.getElementById('custom-reason').required = false;
                     document.getElementById('custom-reason-counter').textContent = '0';
                     document.getElementById('custom-reason-container').classList.remove('active');
-                    document.getElementById('captcha-input').value = '';
                     document.getElementById('discord-check-status').textContent = 'Не проверен';
                     document.getElementById('discord-check-status').className = 'check-status status-pending';
                     discordIdVerified = false;
@@ -1791,7 +1880,9 @@
                     userActivity = { typingTime: 0, pasteEvents: 0, fieldChanges: 0, lastActivity: Date.now() };
                     BEHAVIOR_ANALYSIS.reset();
                     
-                    displayCaptcha();
+                    // Сбрасываем Turnstile
+                    resetTurnstile();
+                    
                     successMessage.scrollIntoView({ behavior: 'smooth' });
                     
                     // Логирование успешной отправки
