@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Federal Investigation Bureau - Рапорт на увольнение</title>
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <style>
         /* Ваши существующие стили остаются без изменений */
         * {
@@ -263,21 +262,21 @@
             display: block;
         }
 
-        /* Стили для Cloudflare Turnstile */
-        .cf-turnstile-container {
+        .captcha-container {
             background: rgba(255, 255, 255, 0.05);
             border-radius: 8px;
             padding: 15px;
             margin: 20px 0;
             text-align: center;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 80px;
         }
 
-        .cf-turnstile-container iframe {
-            border-radius: 4px;
+        .captcha-text {
+            font-size: 24px;
+            font-weight: bold;
+            letter-spacing: 3px;
+            margin: 10px 0;
+            color: #3498db;
+            user-select: none;
         }
 
         .hidden-field {
@@ -529,18 +528,25 @@
                     </div>
                 </div>
 
-                <!-- Cloudflare Turnstile вместо кастомной капчи -->
-                <div class="cf-turnstile-container" id="turnstile-container">
-                    <div class="cf-turnstile" data-sitekey="1x00000000000000000000AA" data-theme="dark" data-callback="onTurnstileSuccess"></div>
+                <div class="captcha-container" id="captcha-container">
+                    <p>Подтвердите, что вы не робот:</p>
+                    <div class="captcha-text" id="captcha-text"></div>
+                    <input type="text" id="captcha-input" placeholder="Введите текст выше" required 
+                           autocomplete="off" data-lpignore="true">
+                    <div class="validation-message validation-error" id="captcha-validation">
+                        Введите текст с изображения
+                    </div>
+                    <button type="button" id="refresh-captcha" style="margin-top: 10px; background: #3498db; border: none; padding: 5px 10px; border-radius: 4px; color: white; cursor: pointer;">
+                        Обновить
+                    </button>
                 </div>
-                <input type="hidden" id="cf-turnstile-response" name="cf-turnstile-response">
 
                 <div class="loading" id="loading">
                     <div class="spinner"></div>
                     <p>Проверка данных и отправка...</p>
                 </div>
 
-                <button type="submit" class="submit-btn" id="submit-btn" disabled>
+                <button type="submit" class="submit-btn" id="submit-btn">
                     🔒 Отправить рапорт на увольнение
                 </button>
             </form>
@@ -1148,34 +1154,6 @@
             }
         }
 
-        // ==================== CLOUDFLARE TURNSTILE ФУНКЦИОНАЛЬНОСТЬ ====================
-
-        // Переменная для отслеживания состояния Turnstile
-        let turnstileVerified = false;
-
-        // Callback функция для успешного прохождения Turnstile
-        function onTurnstileSuccess(token) {
-            document.getElementById('cf-turnstile-response').value = token;
-            turnstileVerified = true;
-            document.getElementById('submit-btn').disabled = false;
-            console.log('Turnstile успешно пройден');
-        }
-
-        // Функция для сброса Turnstile
-        function resetTurnstile() {
-            turnstileVerified = false;
-            document.getElementById('cf-turnstile-response').value = '';
-            document.getElementById('submit-btn').disabled = true;
-            
-            // Перезагружаем Turnstile виджет
-            if (window.turnstile) {
-                const container = document.querySelector('.cf-turnstile');
-                if (container) {
-                    window.turnstile.reset();
-                }
-            }
-        }
-
         // ==================== СУЩЕСТВУЮЩИЙ ОСНОВНОЙ КОД ====================
 
         // Защита консоли
@@ -1362,6 +1340,25 @@
             }
         }
 
+        function generateCaptcha() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+            return Array.from({length: 6}, () => chars.charAt(Math.floor(Math.random() * chars.length))).join('');
+        }
+
+        let currentCaptcha = '';
+
+        function displayCaptcha() {
+            currentCaptcha = generateCaptcha();
+            document.getElementById('captcha-text').textContent = currentCaptcha;
+            document.getElementById('captcha-input').value = '';
+            toggleValidationMessage('captcha-validation', true);
+        }
+
+        function validateCaptcha() {
+            const input = document.getElementById('captcha-input').value;
+            return input === currentCaptcha;
+        }
+
         function updateTime() {
             const now = new Date();
             document.getElementById('current-time').textContent = `Сегодня, в ${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
@@ -1537,6 +1534,7 @@
             const inventoryInput = document.getElementById('inventory-screenshot');
             const reasonSelect = document.getElementById('reason-type');
             const customReasonTextarea = document.getElementById('custom-reason');
+            const captchaInput = document.getElementById('captcha-input');
 
             // Реальная проверка на плохие слова при вводе
             nameInput.addEventListener('input', function() {
@@ -1600,6 +1598,11 @@
                 const isValid = this.value !== '';
                 toggleValidationMessage('reason-validation', isValid);
             });
+
+            captchaInput.addEventListener('input', function() {
+                const isValid = this.value.length > 0;
+                toggleValidationMessage('captcha-validation', isValid);
+            });
         }
 
         function toggleValidationMessage(elementId, isValid) {
@@ -1626,6 +1629,8 @@
         document.getElementById('custom-reason').addEventListener('input', function() {
             document.getElementById('custom-reason-counter').textContent = this.value.length;
         });
+
+        document.getElementById('refresh-captcha').addEventListener('click', displayCaptcha);
 
         document.getElementById('check-discord-btn').addEventListener('click', async function() {
             const discordId = document.getElementById('discord-id').value.trim();
@@ -1678,6 +1683,7 @@
             initializeEnhancedSecurity();
             updateTime();
             setInterval(updateTime, 60000);
+            displayCaptcha();
             trackUserActivity();
             setupRealTimeValidation();
             
@@ -1746,10 +1752,10 @@
             }
             lastSubmitTime = now;
             
-            // Проверка Cloudflare Turnstile
-            if (!turnstileVerified) {
-                errorMessage.innerHTML = '<p>Пожалуйста, пройдите проверку безопасности.</p>';
+            if (!validateCaptcha()) {
+                errorMessage.innerHTML = '<p>Неверно введена CAPTCHA. Попробуйте снова.</p>';
                 errorMessage.style.display = 'block';
+                displayCaptcha();
                 return;
             }
             
@@ -1867,6 +1873,7 @@
                     document.getElementById('custom-reason').required = false;
                     document.getElementById('custom-reason-counter').textContent = '0';
                     document.getElementById('custom-reason-container').classList.remove('active');
+                    document.getElementById('captcha-input').value = '';
                     document.getElementById('discord-check-status').textContent = 'Не проверен';
                     document.getElementById('discord-check-status').className = 'check-status status-pending';
                     discordIdVerified = false;
@@ -1880,9 +1887,7 @@
                     userActivity = { typingTime: 0, pasteEvents: 0, fieldChanges: 0, lastActivity: Date.now() };
                     BEHAVIOR_ANALYSIS.reset();
                     
-                    // Сбрасываем Turnstile
-                    resetTurnstile();
-                    
+                    displayCaptcha();
                     successMessage.scrollIntoView({ behavior: 'smooth' });
                     
                     // Логирование успешной отправки
